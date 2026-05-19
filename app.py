@@ -8,9 +8,9 @@ from sqlalchemy import func
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
-CORS(app) # Dozvoljava komunikaciju s Vue.js-om
+CORS(app)
 
-# Postavke baze
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/teretana'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -92,7 +92,7 @@ def dodaj_clana():
     db.session.commit()
     return jsonify({"poruka": "Član dodan!"})
 
-@app.route('/clanovi/<int:id>', methods=['PUT']) # ISPRAVLJENO: Dodan route
+@app.route('/clanovi/<int:id>', methods=['PUT'])
 def uredi_clana(id):
     clan = Clan.query.get(id)
     if not clan: return jsonify({"message": "Član nije pronađen"}), 404
@@ -144,7 +144,7 @@ def dodaj_dolazak():
 @app.route('/dolasci/<int:id>', methods=['DELETE'])
 def obrisi_dolazak(id):
     try:
-        zapis = Dolazak.query.get(id)  # Tražimo dolazak po ID-u
+        zapis = Dolazak.query.get(id)
         if not zapis:
             return jsonify({"error": "Zapis nije pronađen"}), 404
 
@@ -159,16 +159,13 @@ def obrisi_dolazak(id):
 @app.route('/dolasci/<int:id>', methods=['PUT'])
 def dodavanje_dolazaka(id):
     try:
-        zapis = Dolazak.query.get(id)  # Pronalazimo postojeći zapis
+        zapis = Dolazak.query.get(id)
 
         if not zapis:
             return jsonify({"error": "Zapis nije pronađen"}), 404
 
-        # Dohvaćamo podatke poslane u JSON formatu
         podaci = request.get_json()
 
-        # Ažuriramo polja ako su poslana u zahtjevu
-        # .get('ključ', zapis.stara_vrijednost) osigurava da podatak ostane isti ako nije poslan novi
         if 'datum_vrijeme' in podaci:
             zapis.datum_vrijeme = podaci['datum_vrijeme']
         if 'napomena' in podaci:
@@ -194,7 +191,6 @@ def dohvati_pakete():
 @app.route('/uplate', methods=['GET'])
 def dohvati_uplate():
     try:
-        # Eksplicitno kažemo: Kreni od Uplate, spoji Člana, pa onda spoji Paket
         rezultati = db.session.query(Uplata, Clan, Paket)\
             .select_from(Uplata)\
             .join(Clan, Uplata.clan_id == Clan.id)\
@@ -220,7 +216,7 @@ def dodaj_uplatu():
     nova = Uplata(
         clan_id=podaci['clan_id'],
         paket_id=podaci['paket_id'],
-        datum_uplate=datetime.now() # Bilježimo trenutni datum
+        datum_uplate=datetime.now()
     )
     db.session.add(nova)
     db.session.commit()
