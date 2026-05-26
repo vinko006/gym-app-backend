@@ -80,17 +80,31 @@ def dohvati_clanove():
         })
     return jsonify(lista)
 
+
 @app.route('/clanovi', methods=['POST'])
 def dodaj_clana():
     podaci = request.get_json()
     novi = Clan(
-        ime=podaci['ime'], prezime=podaci['prezime'],
-        email=podaci.get('email'), paket_id=podaci.get('paket_id'),
+        ime=podaci['ime'],
+        prezime=podaci['prezime'],
+        email=podaci.get('email'),
+        paket_id=podaci.get('paket_id'),
         trener_id=podaci.get('trener_id')
     )
     db.session.add(novi)
     db.session.commit()
-    return jsonify({"poruka": "Član dodan!"})
+
+    if novi.paket_id:
+        automatska_uplata = Uplata(
+            clan_id=novi.id,
+            paket_id=novi.paket_id,
+            datum_uplate=datetime.now()
+        )
+        db.session.add(automatska_uplata)
+        db.session.commit()
+
+    return jsonify({"poruka": "Član je uspješno dodan!"})
+
 
 @app.route('/clanovi/<int:id>', methods=['PUT'])
 def uredi_clana(id):
