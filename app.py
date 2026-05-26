@@ -94,6 +94,7 @@ def dodaj_clana():
     db.session.add(novi)
     db.session.commit()
 
+    #Stvara novu uplatu unutar baze podataka
     if novi.paket_id:
         automatska_uplata = Uplata(
             clan_id=novi.id,
