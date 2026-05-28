@@ -24,13 +24,33 @@ def index():
 # --- TRENERI ---
 @app.route('/treneri', methods=['GET'])
 def dohvati_trenere():
-    svi_treneri = Trener.query.all()
-    return jsonify([{
+
+    stranica = request.args.get('stranica', default=1, type=int)
+    po_stranici = request.args.get('po_stranici', default=10, type=int)
+    pretraga = request.args.get('pretraga', default='', type=str).strip()
+
+    upit = Trener.query
+
+    if pretraga:
+        upit = upit.filter(
+            (Trener.ime.ilike(f"%{pretraga}%")) |
+            (Trener.prezime.ilike(f"%{pretraga}%")) |
+            (Trener.specijalnost.ilike(f"%{pretraga}%"))
+        )
+
+    pagnacija = upit.paginate(stranica = stranica, po_stranici = po_stranici, error_out=False)
+
+    lista_trenera = [{
         'id': t.id,
         'ime': t.ime,
         'prezime': t.prezime,
         'specijalnost': t.specijalnost
-    } for t in svi_treneri])
+    } for t in pagnacija.items]
+
+    return jsonify({
+        "treneri":lista_trenera,
+        "ukupnoStranica":pagnacija.total.pages
+    })
 
 @app.route('/treneri', methods=['POST'])
 def dodaj_trenera():
@@ -68,17 +88,45 @@ def obrisi_trenera(id):
 # --- CLANOVI ---
 @app.route('/clanovi', methods=['GET'])
 def dohvati_clanove():
-    svi = Clan.query.all()
-    lista = []
-    for c in svi:
+
+    stranica = request.args.get('stranica', default=1, type=int)
+    po_stranici = request.args.get('po_stranici', default=10, type=int)
+    pretraga = request.args.get('pretraga', default='', type=str).split()
+
+    upit = db.session.query(Clan).outerjoin(Trener).outerjoin(Paket)
+
+    if pretraga:
+        upit = upit.filter(
+            (Clan.ime.ilike(f"%{pretraga}%")) |
+            (Clan.prezime.ilike(f"%{pretraga}%")) |
+            (Clan.email.ilike(f"%{pretraga}%")) |
+            (Trener.ime.ilike(f"%{pretraga}%")) |
+            (Trener.prezime.ilike(f"%{pretraga}%")) |
+            (Paket.naziv.ilike(f"%{pretraga}%"))
+        )
+
+    pagnacija = upit.paginate(stranica = stranica, po_stranici = po_stranici, error_out=False)
+
+    lista_clanova = []
+    for c in pagnacija.items:
         trener_info = f"{c.trener.ime} {c.trener.prezime}" if c.trener else "Nema trenera"
         naziv_paketa = c.paket.naziv if c.paket else "Bez paketa"
-        lista.append({
-            'id': c.id, 'ime': c.ime, 'prezime': c.prezime, 'email': c.email,
-            'paket': naziv_paketa, 'trener': trener_info,
-            'paket_id': c.paket_id, 'trener_id': c.trener_id # Bitno za frontend uređivanje
+
+        lista_clanova.append({
+            'id': c.id,
+            'ime': c.ime,
+            'prezime': c.prezime,
+            'email': c.email,
+            'paket': naziv_paketa,
+            'trener': trener_info,
+            'paket_id': c.paket_id,
+            'trener_id': c.trener_id
         })
-    return jsonify(lista)
+
+    return jsonify({
+        "clanovi": lista_clanova,
+        "ukupnoStranica": pagnacija.pages
+    })
 
 
 @app.route('/clanovi', methods=['POST'])
