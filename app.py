@@ -24,21 +24,32 @@ def index():
 # --- TRENERI ---
 @app.route('/treneri', methods=['GET'])
 def dohvati_trenere():
+    stranica = request.args.get('page', default=1, type=int)
+    po_stranici = request.args.get('per_page', default=10, type=int)
+    pretraga = request.args.get('search', default='', type=str).strip()
 
-    stranica = request.args.get('stranica', default=1, type=int)
-    po_stranici = request.args.get('po_stranici', default=10, type=int)
-    pretraga = request.args.get('pretraga', default='', type=str).strip()
+    tip_filtera = request.args.get('tip_filtera', default='Sve', type=str)
 
     upit = Trener.query
 
     if pretraga:
-        upit = upit.filter(
-            (Trener.ime.ilike(f"%{pretraga}%")) |
-            (Trener.prezime.ilike(f"%{pretraga}%")) |
-            (Trener.specijalnost.ilike(f"%{pretraga}%"))
-        )
+        if tip_filtera == 'Ime i prezime':
+            upit = upit.filter(
+                (Trener.ime.ilike(f"%{pretraga}%")) |
+                (Trener.prezime.ilike(f"%{pretraga}%"))
+            )
+        elif tip_filtera == 'Specijalnost':
+            upit = upit.filter(
+                Trener.specijalnost.ilike(f"%{pretraga}%")
+            )
+        else:
+            upit = upit.filter(
+                (Trener.ime.ilike(f"%{pretraga}%")) |
+                (Trener.prezime.ilike(f"%{pretraga}%")) |
+                (Trener.specijalnost.ilike(f"%{pretraga}%"))
+            )
 
-    pagnacija = upit.paginate(stranica = stranica, po_stranici = po_stranici, error_out=False)
+    pagnacija = upit.paginate(page=stranica, per_page=po_stranici, error_out=False)
 
     lista_trenera = [{
         'id': t.id,
@@ -48,8 +59,8 @@ def dohvati_trenere():
     } for t in pagnacija.items]
 
     return jsonify({
-        "treneri":lista_trenera,
-        "ukupnoStranica":pagnacija.total.pages
+        "treneri": lista_trenera,
+        "ukupnoStranica": pagnacija.pages
     })
 
 @app.route('/treneri', methods=['POST'])
@@ -88,24 +99,41 @@ def obrisi_trenera(id):
 # --- CLANOVI ---
 @app.route('/clanovi', methods=['GET'])
 def dohvati_clanove():
+    stranica = request.args.get('page', default=1, type=int)
+    po_stranici = request.args.get('per_page', default=10, type=int)
+    pretraga = request.args.get('search', default='', type=str).strip()
 
-    stranica = request.args.get('stranica', default=1, type=int)
-    po_stranici = request.args.get('po_stranici', default=10, type=int)
-    pretraga = request.args.get('pretraga', default='', type=str).split()
+    # Primalo tip_filtera sa frontenda (ako ga nema, default je 'Sve')
+    tip_filtera = request.args.get('tip_filtera', default='Sve', type=str)
 
     upit = db.session.query(Clan).outerjoin(Trener).outerjoin(Paket)
 
     if pretraga:
-        upit = upit.filter(
-            (Clan.ime.ilike(f"%{pretraga}%")) |
-            (Clan.prezime.ilike(f"%{pretraga}%")) |
-            (Clan.email.ilike(f"%{pretraga}%")) |
-            (Trener.ime.ilike(f"%{pretraga}%")) |
-            (Trener.prezime.ilike(f"%{pretraga}%")) |
-            (Paket.naziv.ilike(f"%{pretraga}%"))
-        )
+        if tip_filtera == 'Ime člana':
+            upit = upit.filter(
+                (Clan.ime.ilike(f"%{pretraga}%")) |
+                (Clan.prezime.ilike(f"%{pretraga}%"))
+            )
+        elif tip_filtera == 'Trener':
+            upit = upit.filter(
+                (Trener.ime.ilike(f"%{pretraga}%")) |
+                (Trener.prezime.ilike(f"%{pretraga}%"))
+            )
+        elif tip_filtera == 'Paket':
+            upit = upit.filter(
+                Paket.naziv.ilike(f"%{pretraga}%")
+            )
+        else:
+            upit = upit.filter(
+                (Clan.ime.ilike(f"%{pretraga}%")) |
+                (Clan.prezime.ilike(f"%{pretraga}%")) |
+                (Clan.email.ilike(f"%{pretraga}%")) |
+                (Trener.ime.ilike(f"%{pretraga}%")) |
+                (Trener.prezime.ilike(f"%{pretraga}%")) |
+                (Paket.naziv.ilike(f"%{pretraga}%"))
+            )
 
-    pagnacija = upit.paginate(stranica = stranica, po_stranici = po_stranici, error_out=False)
+    pagnacija = upit.paginate(page=stranica, per_page=po_stranici, error_out=False)
 
     lista_clanova = []
     for c in pagnacija.items:
