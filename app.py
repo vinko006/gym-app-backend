@@ -78,7 +78,9 @@ def dodaj_trenera():
 @app.route('/treneri/<int:id>', methods=['PUT'])
 def uredi_trenera(id):
     trener = Trener.query.get(id)
-    if not trener: return jsonify({"poruka": "Nema trenera"}), 404
+    if not trener:
+        return jsonify({"poruka": "Trener nije pronađen"}), 404
+
     podaci = request.get_json()
     trener.ime = podaci.get('ime', trener.ime)
     trener.prezime = podaci.get('prezime', trener.prezime)
@@ -89,6 +91,9 @@ def uredi_trenera(id):
 @app.route('/treneri/<int:id>', methods=['DELETE'])
 def obrisi_trenera(id):
     trener = Trener.query.get(id)
+    if not trener:
+        return jsonify({"poruka": "Trener nije pronađen"}), 404
+
     try:
         db.session.delete(trener)
         db.session.commit()
@@ -103,7 +108,6 @@ def dohvati_clanove():
     po_stranici = request.args.get('per_page', default=10, type=int)
     pretraga = request.args.get('search', default='', type=str).strip()
 
-    # Primalo tip_filtera sa frontenda (ako ga nema, default je 'Sve')
     tip_filtera = request.args.get('tip_filtera', default='Sve', type=str)
 
     upit = db.session.query(Clan).outerjoin(Trener).outerjoin(Paket)
@@ -127,7 +131,6 @@ def dohvati_clanove():
             upit = upit.filter(
                 (Clan.ime.ilike(f"%{pretraga}%")) |
                 (Clan.prezime.ilike(f"%{pretraga}%")) |
-                (Clan.email.ilike(f"%{pretraga}%")) |
                 (Trener.ime.ilike(f"%{pretraga}%")) |
                 (Trener.prezime.ilike(f"%{pretraga}%")) |
                 (Paket.naziv.ilike(f"%{pretraga}%"))
@@ -186,7 +189,8 @@ def dodaj_clana():
 @app.route('/clanovi/<int:id>', methods=['PUT'])
 def uredi_clana(id):
     clan = Clan.query.get(id)
-    if not clan: return jsonify({"message": "Član nije pronađen"}), 404
+    if not clan:
+        return jsonify({"message": "Član nije pronađen"}), 404
     podaci = request.get_json()
     clan.ime = podaci.get('ime', clan.ime)
     clan.prezime = podaci.get('prezime', clan.prezime)
