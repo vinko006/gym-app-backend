@@ -315,7 +315,7 @@ def dodaj_uplatu():
     )
     db.session.add(nova)
     db.session.commit()
-    return jsonify({"message": "Uplata uspješna"}), 201
+    return jsonify({"message": "Uplata uspješna"}), 200
 
 @app.route('/uplate/<int:id>', methods=['DELETE'])
 def obrisi_uplatu(id):
